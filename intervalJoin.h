@@ -22,6 +22,8 @@ typedef struct{
 SetA setA;
 SetB setB;
 
+int *start_index, *end_index;
+
 int *inStartA, *inEndA;
 int *inStartB, *inEndB;
 
