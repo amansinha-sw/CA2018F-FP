@@ -8,16 +8,19 @@
 using namespace std;
 
 typedef struct{
-	char **category;
-	int start_idx;
-	int end_idx;
+  int count;
+	int *category;
+	int *length;
 }SetA;
 
 typedef struct{
-	char **category;
-	int start_idx;
-	int end_idx;	
+  int count;
+	int *category;
+	int *length;	
 }SetB;
+
+SetA setA;
+SetB setB;
 
 int *inStartA, *inEndA;
 int *inStartB, *inEndB;
@@ -27,29 +30,47 @@ int *outCPU_Begin, *outCPU_End;
 
 //Read Metadata for csv files
 void read_Meta(){
-	
+  FILE *mFile;
+  int i;
+  mFile = fopen ("data/metaA.csv","r");
+  fscanf (mFile, "%d", &(setA.count));
+  setA.category=new int [setA.count]();
+  setA.length=new int [setA.count]();
+  for(i=0;i<setA.count;i++)
+  	fscanf(mFile,"%d,%d",&(setA.category[i]),&(setA.length[i]));
+	fclose(mFile);
+  mFile = fopen ("data/metaB.csv","r");
+  fscanf (mFile, "%d", &(setB.count));
+  setB.category=new int [setB.count]();
+  setB.length=new int [setB.count]();
+  for(i=0;i<setB.count;i++)
+  	fscanf(mFile,"%d,%d",&(setB.category[i]),&(setB.length[i]));
+	fclose(mFile);
 }
 
 //Read setA.csv or setB.csv
-void read_csv(char *filename, char *category, bool isSetA){
-	
+void init_from_csv(FILE *fpA, FILE *fpB, int id){
+	int i;
+  int temp;
+  inStartA=new int [setA.length[id]]();
+	inEndA=new int [setA.length[id]]();
+	inStartB=new int [setB.length[id]]();
+	inEndB=new int [setB.length[id]]();
+  for(i=0;i<setA.length[id];i++)
+    fscanf(fpA,"%d,%d,%d",&temp,&(inStartA[i]),&(inEndA[i]));
+  for(i=0;i<setB.length[id];i++)
+    fscanf(fpB,"%d,%d,%d",&temp,&(inStartB[i]),&(inEndB[i]));
+	outGPU_Begin=new int [setB.length[id]]();
+	outGPU_End=new int [setB.length[id]]();
+	outCPU_Begin=new int [setB.length[id]]();
+	outCPU_End=new int [setB.length[id]]();
+  for(i=0;i<setB.length[id];i++){
+        outCPU_Begin[i]=INT_MAX;
+        outCPU_End[i]=INT_MIN;
+        outGPU_Begin[i]=INT_MAX;
+        outGPU_End[i]=INT_MIN;
+  }  
 }
-
-//Initialise data for a particular category from both csv files
-void init(int length, char *category)
-{
-	inStartA=new int [length]();
-	inEndA=new int [length]();
-	inStartB=new int [length]();
-	inEndB=new int [length]();
-	read_csv("data/setA.csv",category,true);
-	read_csv("data/setB.csv",category,false);
-	outGPU_Begin=new int [length]();
-	outGPU_End=new int [length]();
-	outCPU_Begin=new int [length]();
-	outCPU_End=new int [length]();
-}
-
 
 void ending()
 {
@@ -67,7 +88,7 @@ void ending()
 bool checker(int length){
 	int i;
 	for(i = 0; i < length; i++){ 
-		if(outCPU_Begin[i] != outGPU_Begin[i] || outCPU_End[i] != outGPU_End[i]{
+		if(outCPU_Begin[i] != outGPU_Begin[i] || outCPU_End[i] != outGPU_End[i]){
 			cout << "The element: " << i << " is wrong!\n";
 			cout << "outCPU_Begin[" << i << "] = " << outCPU_Begin[i] << endl;
 			cout << "outGPU_Begin[" << i << "] = " << outGPU_Begin[i] << endl;
